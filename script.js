@@ -36,9 +36,26 @@ async function displayText() {
         const readmeResponse = await fetch(`https://raw.githubusercontent.com/${repoName}/master/README.md`);
         if (readmeResponse.ok) {
             const readmeText = await readmeResponse.text();
-            const readmeElement = document.createElement('div');
-            readmeElement.innerHTML = marked(readmeText);
-            textContainer.appendChild(readmeElement);
+            const lines = readmeText.split('\n');
+
+            // Skip the title and media file links
+            let textStartIndex = 0;
+            for (let i = 0; i < lines.length; i++) {
+                if (!lines[i].startsWith('#') && !lines[i].startsWith('!')) {
+                    textStartIndex = i;
+                    break;
+                }
+            }
+
+            // Extract text content and create paragraphs
+            for (let i = textStartIndex; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line) {
+                    const paragraph = document.createElement('p');
+                    paragraph.textContent = line;
+                    textContainer.appendChild(paragraph);
+                }
+            }
         }
     } catch (error) {
         console.error('Error fetching README:', error);
