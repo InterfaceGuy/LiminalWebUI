@@ -63,8 +63,8 @@ async function displayText() {
 }
 
 // Call the functions to display images and text
-//displayImages();
-//displayText();
+displayImages();
+displayText();
 
 // Function to fetch and display submodule information
 async function displaySubmoduleInfo() {
