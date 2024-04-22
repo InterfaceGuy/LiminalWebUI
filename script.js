@@ -64,4 +64,4 @@ async function displayText() {
 
 // Call the functions to display images and text
 displayImages();
-displayText();
+//displayText();
