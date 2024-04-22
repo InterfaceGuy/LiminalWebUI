@@ -91,7 +91,11 @@ async function displaySubmoduleInfo() {
             outputReposElement.textContent = `Output Repositories: ${outputRepos.join(', ')}`;
             textContainer.appendChild(outputReposElement);
         } else {
-            console.error(`Error fetching submodule information: ${response.status}`);
+            const inputReposElement = document.createElement('p');
+            inputReposElement.textContent = `API Fetch Error`;
+            textContainer.appendChild(inputReposElement);
+
+            //console.error(`Error fetching submodule information: ${response.status}`);
         }
     } catch (error) {
         console.error('Error fetching submodule information:', error);
