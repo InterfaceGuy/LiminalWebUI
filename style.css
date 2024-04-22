@@ -1,0 +1,23 @@
+body {
+    background-color: black;
+    color: white;
+    font-family: 'TeX Gyre Termes', sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 2rem;
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 2rem;
+}
+
+img {
+    max-width: 100%;
+    margin-bottom: 2rem;
+}
+
+p {
+    max-width: 800px;
+    margin: 0 auto 2rem;
+}
