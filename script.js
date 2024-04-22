@@ -63,5 +63,40 @@ async function displayText() {
 }
 
 // Call the functions to display images and text
-displayImages();
+//displayImages();
 //displayText();
+
+// Function to fetch and display submodule information
+async function displaySubmoduleInfo() {
+    const textContainer = document.getElementById('text-container');
+
+    try {
+        const response = await fetch(`https://api.github.com/repos/${repoName}/submodule_stats`, {
+            headers: {
+                'Accept': 'application/vnd.github+json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+
+            const inputRepos = data.submodule_stats.map(submodule => submodule.url);
+            const outputRepos = data.submodule_stats.map(submodule => submodule.parent_url);
+
+            const inputReposElement = document.createElement('p');
+            inputReposElement.textContent = `Input Repositories: ${inputRepos.join(', ')}`;
+            textContainer.appendChild(inputReposElement);
+
+            const outputReposElement = document.createElement('p');
+            outputReposElement.textContent = `Output Repositories: ${outputRepos.join(', ')}`;
+            textContainer.appendChild(outputReposElement);
+        } else {
+            console.error(`Error fetching submodule information: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Error fetching submodule information:', error);
+    }
+}
+
+// Call the function to display submodule information
+displaySubmoduleInfo();
