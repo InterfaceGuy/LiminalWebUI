@@ -1,106 +1,44 @@
-// Get the repository name from the URL
-const repoName = window.location.pathname.split('/').pop();
-
-// Set the title based on the repository name
-document.getElementById('title').textContent = repoName;
-
-// Function to fetch and display images
-async function displayImages() {
-    const imageContainer = document.getElementById('image-container');
-
-    try {
-        const pngResponse = await fetch(`${repoName}/master/`, { method: 'HEAD' });
-        const gifResponse = await fetch(`${repoName}/master/`, { method: 'HEAD' });
-
-        if (pngResponse.ok) {
-            const pngImage = document.createElement('img');
-            pngImage.src = `https://raw.githubusercontent.com/${repoName}/master/${repoName}.png`;
-            imageContainer.appendChild(pngImage);
-        }
-
-        if (gifResponse.ok) {
-            const gifImage = document.createElement('img');
-            gifImage.src = `https://raw.githubusercontent.com/${repoName}/master/${repoName}.gif`;
-            imageContainer.appendChild(gifImage);
-        }
-    } catch (error) {
-        console.error('Error fetching images:', error);
-    }
-}
-
-// Function to fetch and display text content
-async function displayText() {
-    const textContainer = document.getElementById('text-container');
-
-    try {
-        const readmeResponse = await fetch(`https://raw.githubusercontent.com/${repoName}/master/README.md`);
-        if (readmeResponse.ok) {
-            const readmeText = await readmeResponse.text();
-            const lines = readmeText.split('\n');
-
-            // Skip the title and media file links
-            let textStartIndex = 0;
-            for (let i = 0; i < lines.length; i++) {
-                if (!lines[i].startsWith('#') && !lines[i].startsWith('!')) {
-                    textStartIndex = i;
-                    break;
-                }
-            }
-
-            // Extract text content and create paragraphs
-            for (let i = textStartIndex; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (line) {
-                    const paragraph = document.createElement('p');
-                    paragraph.textContent = line;
-                    textContainer.appendChild(paragraph);
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Error fetching README:', error);
-    }
-}
-
-// Call the functions to display images and text
-displayImages();
-displayText();
-
-// Function to fetch and display submodule information
-async function displaySubmoduleInfo() {
-    const textContainer = document.getElementById('text-container');
-
-    try {
-        const response = await fetch(`https://api.github.com/repos/${repoName}/submodule_stats`, {
-            headers: {
-                'Accept': 'application/vnd.github+json'
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-
-            const inputRepos = data.submodule_stats.map(submodule => submodule.url);
-            const outputRepos = data.submodule_stats.map(submodule => submodule.parent_url);
-
-            const inputReposElement = document.createElement('p');
-            inputReposElement.textContent = `Input Repositories: ${inputRepos.join(', ')}`;
-            textContainer.appendChild(inputReposElement);
-
-            const outputReposElement = document.createElement('p');
-            outputReposElement.textContent = `Output Repositories: ${outputRepos.join(', ')}`;
-            textContainer.appendChild(outputReposElement);
+// Function to load the contents of a file
+function loadFile(filePath) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', filePath, true);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
+        if (xhr.status === 200) {
+          resolve(xhr.responseText);
         } else {
-            const inputReposElement = document.createElement('p');
-            inputReposElement.textContent = `API Fetch Error`;
-            textContainer.appendChild(inputReposElement);
-
-            //console.error(`Error fetching submodule information: ${response.status}`);
+          reject(xhr.statusText);
         }
-    } catch (error) {
-        console.error('Error fetching submodule information:', error);
-    }
+      }
+    };
+    xhr.send(null);
+  });
 }
 
-// Call the function to display submodule information
-displaySubmoduleInfo();
+// Load the .gitmodules file
+loadFile('/../.gitmodules')
+  .then(gitmodulesContent => {
+    // Parse the .gitmodules file content
+    const submodules = gitmodulesContent.split('[submodule')
+      .slice(1)
+      .map(submoduleEntry => {
+        const lines = submoduleEntry.split('\n');
+        const path = lines.find(line => line.startsWith('path')).split('=')[1].trim();
+        const url = lines.find(line => line.startsWith('url')).split('=')[1].trim();
+        return { path, url };
+      });
+
+    // Get the submodules container element
+    const submodulesContainer = document.getElementById('submodules');
+
+    // Loop through the submodules and create a paragraph for each one
+    submodules.forEach(submodule => {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = `${submodule.path} (${submodule.url})`;
+      submodulesContainer.appendChild(paragraph);
+    });
+  })
+  .catch(error => {
+    console.error('Error loading .gitmodules file:', error);
+  });
