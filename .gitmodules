@@ -1,0 +1,6 @@
+[submodule "Narrative"]
+	path = Narrative
+	url = https://github.com/InterfaceGuy/Narrative
+[submodule "Galaxy"]
+	path = Galaxy
+	url = https://github.com/InterfaceGuy/Galaxy

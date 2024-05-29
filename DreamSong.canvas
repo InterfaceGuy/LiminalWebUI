@@ -1,0 +1,7 @@
+{
+	"nodes":[
+		{"id":"e7ec4df4db302606","type":"file","file":"Narrative/README.md","x":-200,"y":-800,"width":400,"height":400},
+		{"id":"4bb216dce469c339","type":"file","file":"Galaxy/README.md","x":260,"y":-500,"width":400,"height":400}
+	],
+	"edges":[]
+}
