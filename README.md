@@ -5,3 +5,7 @@ This repo serves as a submodule to be imported into any other DreamTalk repo to 
 This way we have a centralised layout that can dynamically be updated thus changing the look of the entire Liminal Web consisting of DreamTalks and DreamSongs
 
 https://claude.ai/chat/3f4a222c-0458-4137-8b63-58adae12fa69
+
+# To Do
+
+- [x] change fetching to parsing local file if possible
