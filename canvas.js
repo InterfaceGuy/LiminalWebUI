@@ -2,7 +2,7 @@ const canvasContainer = document.getElementById('canvas-container');
 
 async function fetchCanvasData() {
   try {
-    const response = await fetch('dreamsong.canvas');
+    const response = await fetch('DreamSong.canvas');
     const canvasData = await response.json();
     renderCanvas(canvasData);
   } catch (error) {
