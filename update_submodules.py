@@ -28,9 +28,6 @@ def update_submodules(repos):
     to_add = set(repos) - set(current_submodules)
     to_remove = set(current_submodules) - set(repos)
 
-    print(current_submodules)
-    print(repos)
-
     # Add new submodules
     for repo in to_add:
         url = f"{BASE_URL}{repo}.git"
