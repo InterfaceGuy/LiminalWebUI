@@ -1,6 +1,9 @@
 [submodule "Narrative"]
 	path = Narrative
 	url = https://github.com/InterfaceGuy/Narrative
-[submodule "Galaxy"]
-	path = Galaxy
-	url = https://github.com/InterfaceGuy/Galaxy
+[submodule "DomesticatedMind"]
+	path = DomesticatedMind
+	url = https://github.com/InterfaceGuy/DomesticatedMind.git
+[submodule "Emergence"]
+	path = Emergence
+	url = https://github.com/InterfaceGuy/Emergence.git
