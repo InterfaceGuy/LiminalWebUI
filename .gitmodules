@@ -7,3 +7,6 @@
 [submodule "Emergence"]
 	path = Emergence
 	url = https://github.com/InterfaceGuy/Emergence.git
+[submodule "MeaningCrisis"]
+	path = MeaningCrisis
+	url = https://github.com/InterfaceGuy/MeaningCrisis.git
