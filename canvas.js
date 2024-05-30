@@ -43,14 +43,14 @@ function renderCanvas(canvasData) {
       gifElement.src = gifPath;
       gifElement.style.width = '100%';
       gifElement.style.height = '100%';
-      gifElement.style.objectFit = 'cover';
+      gifElement.style.objectFit = 'contain';
       mediaElement.appendChild(gifElement);
     } else if (pngExists) {
       const pngElement = document.createElement('img');
       pngElement.src = pngPath;
       pngElement.style.width = '100%';
       pngElement.style.height = '100%';
-      pngElement.style.objectFit = 'cover';
+      pngElement.style.objectFit = 'contain';
       mediaElement.appendChild(pngElement);
     } else {
       const textElement = document.createElement('div');
