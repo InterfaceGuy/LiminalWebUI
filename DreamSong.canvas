@@ -1,8 +1,9 @@
 {
 	"nodes":[
-		{"id":"27ee66c6a370a973","x":294,"y":-11,"width":400,"height":400,"type":"file","file":"Emergence/README.md"},
+		{"id":"27ee66c6a370a973","type":"file","file":"Emergence/README.md","x":294,"y":-11,"width":400,"height":400},
 		{"id":"e7ec4df4db302606","type":"file","file":"Narrative/README.md","x":-200,"y":-800,"width":400,"height":400},
-		{"id":"bc21e66f7a5db811","type":"file","file":"DomesticatedMind/README.md","x":-360,"y":-120,"width":440,"height":400}
+		{"id":"bc21e66f7a5db811","type":"file","file":"DomesticatedMind/README.md","x":-360,"y":-120,"width":440,"height":400},
+		{"id":"1e89296c7c9d4643","x":294,"y":-720,"width":400,"height":400,"type":"file","file":"Eumemics/README.md"}
 	],
 	"edges":[]
 }
