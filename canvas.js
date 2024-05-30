@@ -1,6 +1,9 @@
 const canvasContainer = document.getElementById('canvas-container');
 const layoutMode = 'grid'; // Set the desired layout mode: 'mirror' or 'grid'
-const gridItemsPerRow = 2; // Set the number of items per row for the grid layout
+const gridItemsPerRow = 4; // Set the number of items per row for the grid layout
+const gridHorizontalSpacing = 20; // Horizontal spacing between grid items
+const gridVerticalSpacing = 20; // Vertical spacing between grid items
+const gridBorderSize = 50; // Border size around the grid container
 
 async function fetchCanvasData() {
   try {
@@ -135,8 +138,8 @@ async function gridLayout(canvasData) {
     mediaElement.style.width = `${itemWidth}px`;
     mediaElement.style.height = `${itemHeight}px`;
     mediaElement.style.transition = 'transform 0.3s ease';
-    const left = currentCol * itemWidth;
-    const top = currentRow * itemHeight;
+    const left = currentCol * (itemWidth + gridHorizontalSpacing) + gridBorderSize;
+    const top = currentRow * (itemHeight + gridVerticalSpacing) + gridBorderSize;
     nodeDiv.style.position = 'absolute';
     nodeDiv.style.left = `${left}px`;
     nodeDiv.style.top = `${top}px`;
@@ -196,9 +199,12 @@ async function gridLayout(canvasData) {
     }
   }
 
+  // Add border to the grid container
+  canvasContainer.style.padding = `${gridBorderSize}px`;
+  canvasContainer.style.boxSizing = 'border-box';
+
   nodeDivs.forEach(nodeDiv => canvasContainer.appendChild(nodeDiv));
 }
-
 
 // Helper function to check if a file exists (you'll need to implement this)
 async function fileExists(filePath) {
@@ -215,4 +221,5 @@ async function fileExists(filePath) {
     }
   }
 }
+
 fetchCanvasData();
