@@ -2,7 +2,7 @@ import json
 import os
 import subprocess
 
-CANVAS_FILE = "../DreamSong.canvas"
+CANVAS_FILE = "DreamSong.canvas"
 BASE_URL = "https://github.com/InterfaceGuy/"
 
 def parse_canvas_file(file_path):
