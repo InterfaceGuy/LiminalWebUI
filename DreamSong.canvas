@@ -3,7 +3,8 @@
 		{"id":"27ee66c6a370a973","type":"file","file":"Emergence/README.md","x":294,"y":-11,"width":400,"height":400},
 		{"id":"e7ec4df4db302606","type":"file","file":"Narrative/README.md","x":-200,"y":-800,"width":400,"height":400},
 		{"id":"bc21e66f7a5db811","type":"file","file":"DomesticatedMind/README.md","x":-360,"y":-120,"width":440,"height":400},
-		{"id":"dbb29f6b88fb6e8a","x":260,"y":-800,"width":400,"height":400,"type":"file","file":"MeaningCrisis/README.md"}
+		{"id":"dbb29f6b88fb6e8a","x":260,"y":-800,"width":400,"height":400,"type":"file","file":"MeaningCrisis/README.md"},
+		{"id":"72346c48c92a27b6","x":60,"y":-400,"width":400,"height":400,"type":"file","file":"DiaLogos/README.md"}
 	],
 	"edges":[]
 }
