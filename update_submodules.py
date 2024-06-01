@@ -35,6 +35,9 @@ def update_submodules(repos):
 
     # Remove old submodules
     for repo in to_remove:
+        # don't remove LiminalWebUI itself
+        if repo == "LiminalWebUI":
+            continue
         subprocess.run(['git', 'submodule', 'deinit', '-f', repo])
         subprocess.run(['git', 'rm', '-f', repo])
         subprocess.run(['rm', '-rf', f'.git/modules/{repo}'])
