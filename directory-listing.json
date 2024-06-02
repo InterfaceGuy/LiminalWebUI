@@ -1,0 +1,56 @@
+{
+  "index.html": null,
+  "LiminalWebUI.sublime-workspace": null,
+  "update_submodules.py": null,
+  "README.md": null,
+  "directory-listing.json": null,
+  "LiminalWebUI.sublime-project": null,
+  "canvas.js": null,
+  "DreamSong.canvas": null,
+  "DomesticatedMind": {
+    "DomesticatedMind.png": null,
+    "DomesticatedMind.key": null,
+    "DomesticatedMindProfile.png": null,
+    "DomesticatedMind.sublime-workspace": null,
+    "DomesticatedMind.sublime-project": null,
+    "README.md": null,
+    "DomesticatedMind.gif": null,
+    "DomesticatedMind.mp4": null,
+    "DomesticatedMind.py": null,
+    "HeadWithShoulders": {}
+  },
+  "MeaningCrisis": {
+    "MeaningCrisis.gif": null,
+    "README.md": null,
+    "SittingDepressedOnChair.svg": null,
+    "SittingDepressed.svg": null,
+    "MeaningCrisis.key": null,
+    "MeaningCrisis.png": null,
+    "LiminalWebUI": {}
+  },
+  "Emergence": {
+    "Emergence.gif": null,
+    "Emergence.sublime-project": null,
+    "README.md": null,
+    "Emergence.py": null,
+    "Emergence.sublime-workspace": null,
+    "Emergence.key": null
+  },
+  "DiaLogos": {
+    "DiaLogos.png": null,
+    "DiaLogos.key": null,
+    "README.md": null,
+    "DiaLogos.gif": null
+  },
+  "DomesticatedMind/HeadWithShoulders": {
+    "HeadWithShoulders.c4d": null,
+    "README.md": null,
+    "HeadWithShoulders.usdz": null
+  },
+  "MeaningCrisis/LiminalWebUI": {
+    "index.html": null,
+    "README.md": null,
+    "script.js": null,
+    "style.css": null
+  }
+}

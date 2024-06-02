@@ -8,6 +8,33 @@ const gridBorderSize = 50; // Border size around the grid container
 let currentRow = 0; // Track the current row for grid layout
 let currentCol = 0; // Track the current column for grid layout
 
+let directoryListing = {};
+
+// Function to load the JSON content dynamically
+async function loadDirectoryListing() {
+  try {
+    const response = await fetch('directory-listing.json');
+    directoryListing = await response.json();
+  } catch (error) {
+    console.error('Error loading directory listing:', error);
+  }
+}
+
+// Function to check if a file exists in the directory listing
+function fileExists(path, file) {
+  const parts = path.split('/');
+  let current = directoryListing;
+
+  for (const part of parts) {
+    if (current[part]) {
+      current = current[part];
+    } else {
+      return false;
+    }
+  }
+  return current && current[file] !== undefined;
+}
+
 async function fetchCanvasData() {
   try {
     const response = await fetch('DreamSong.canvas');
@@ -36,9 +63,9 @@ async function renderNode(node, canvasWidth, canvasHeight, isGridLayout) {
   const pngPath = `${repoName}/${repoName}.png`;
   const pdfPath = `${repoName}/${repoName}.pdf`;
 
-  const gifExists = await fileExists(gifPath);
-  const pngExists = await fileExists(pngPath);
-  const pdfExists = await fileExists(pdfPath);
+  const gifExists = fileExists(repoName, `${repoName}.gif`);
+  const pngExists = fileExists(repoName, `${repoName}.png`);
+  const pdfExists = fileExists(repoName, `${repoName}.pdf`);
 
   const nodeDiv = document.createElement('div');
   nodeDiv.style.display = 'flex';
@@ -172,20 +199,9 @@ async function gridLayout(canvasData) {
   nodeDivs.forEach(nodeDiv => canvasContainer.appendChild(nodeDiv));
 }
 
-// Helper function to check if a file exists (you'll need to implement this)
-async function fileExists(filePath) {
-  try {
-    const response = await fetch(filePath, { method: 'HEAD' });
-    return response.ok;
-  } catch (error) {
-    if (error.message.includes('404')) {
-      // If the error is a 404 (Not Found), don't log it
-      return false;
-    } else {
-      console.error(`Error checking file existence: ${filePath}`, error);
-      return false;
-    }
-  }
+async function initialize() {
+  await loadDirectoryListing();
+  fetchCanvasData();
 }
 
-fetchCanvasData();
+initialize();
