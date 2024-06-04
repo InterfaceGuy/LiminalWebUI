@@ -1,5 +1,5 @@
 const canvasContainer = document.getElementById('canvas-container');
-const layoutMode = 'grid'; // Set the desired layout mode: 'mirror' or 'grid'
+const layoutMode = 'glossary'; // Set the desired layout mode: 'mirror', 'grid', or 'glossary'
 const gridItemsPerRow = 4; // Set the number of items per row for the grid layout
 const gridHorizontalSpacing = 50; // Horizontal spacing between grid items
 const gridVerticalSpacing = 50; // Vertical spacing between grid items
@@ -54,10 +54,12 @@ function renderCanvas(canvasData, layoutMode) {
     mirrorCanvas(canvasData, canvasWidth, canvasHeight);
   } else if (layoutMode === 'grid') {
     gridLayout(canvasData);
+  } else if (layoutMode === 'glossary') {
+    glossaryLayout(canvasData);
   }
 }
 
-async function renderNode(node, canvasWidth, canvasHeight, isGridLayout) {
+async function renderNode(node, canvasWidth, canvasHeight, isGridLayout, isGlossaryLayout) {
   const repoName = node.file.split('/')[0];
   const gifPath = `${repoName}/${repoName}.gif`;
   const pngPath = `${repoName}/${repoName}.png`;
@@ -69,9 +71,10 @@ async function renderNode(node, canvasWidth, canvasHeight, isGridLayout) {
 
   const nodeDiv = document.createElement('div');
   nodeDiv.style.display = 'flex';
-  nodeDiv.style.flexDirection = 'column';
+  nodeDiv.style.flexDirection = isGlossaryLayout ? 'row' : 'column';
   nodeDiv.style.alignItems = 'center';
   nodeDiv.style.justifyContent = 'center';
+  nodeDiv.style.marginBottom = '20px'; // Add space between rows in glossary layout
 
   const mediaElement = document.createElement('div');
   mediaElement.style.transition = 'transform 0.3s ease';
@@ -144,9 +147,24 @@ async function renderNode(node, canvasWidth, canvasHeight, isGridLayout) {
     window.open(repoUrl, '_blank');
   });
 
-  nodeDiv.appendChild(mediaElement);
-  if (gifExists || pngExists || pdfExists) {
+  if (isGlossaryLayout) {
+    nodeDiv.style.width = '100%'; // Make the nodeDiv full width in glossary layout
+    mediaElement.style.width = '300px'; // Fixed width for media element in glossary layout
+    mediaElement.style.height = '300px'; // Fixed height for media element in glossary layout
+    nodeDiv.appendChild(mediaElement);
     nodeDiv.appendChild(labelElement);
+
+    const definitionText = await fetchDefinitionText(repoName);
+    const definitionElement = document.createElement('div');
+    definitionElement.style.flex = '1';
+    definitionElement.style.paddingLeft = '20px';
+    definitionElement.textContent = definitionText;
+    nodeDiv.appendChild(definitionElement);
+  } else {
+    nodeDiv.appendChild(mediaElement);
+    if (gifExists || pngExists || pdfExists) {
+      nodeDiv.appendChild(labelElement);
+    }
   }
 
   if (isGridLayout) {
@@ -162,7 +180,7 @@ async function renderNode(node, canvasWidth, canvasHeight, isGridLayout) {
       currentCol = 0;
       currentRow++;
     }
-  } else {
+  } else if (!isGlossaryLayout) {
     const adjustedX = node.x + canvasWidth / 2;
     const adjustedY = canvasHeight / 2 - node.y;
     nodeDiv.style.position = 'absolute';
@@ -173,10 +191,22 @@ async function renderNode(node, canvasWidth, canvasHeight, isGridLayout) {
   return nodeDiv;
 }
 
+async function fetchDefinitionText(repoName) {
+  try {
+    const response = await fetch(`${repoName}/README.md`);
+    const markdownText = await response.text();
+    const plainText = markdownText.replace(/!?\[.*?\]\(.*?\)/g, '').replace(/#+\s/g, '');
+    return plainText.trim();
+  } catch (error) {
+    console.error(`Error fetching definition text for ${repoName}:`, error);
+    return 'Definition not available.';
+  }
+}
+
 function mirrorCanvas(canvasData, canvasWidth, canvasHeight) {
   const nodeDivs = [];
   canvasData.nodes.forEach(async (node) => {
-    const nodeDiv = await renderNode(node, canvasWidth, canvasHeight, false);
+    const nodeDiv = await renderNode(node, canvasWidth, canvasHeight, false, false);
     nodeDivs.push(nodeDiv);
     canvasContainer.appendChild(nodeDiv);
   });
@@ -188,12 +218,26 @@ async function gridLayout(canvasData) {
   currentCol = 0; // Reset current column
 
   for (const node of canvasData.nodes) {
-    const nodeDiv = await renderNode(node, null, null, true);
+    const nodeDiv = await renderNode(node, null, null, true, false);
     nodeDivs.push(nodeDiv);
   }
 
   // Add border to the grid container
   canvasContainer.style.padding = `${gridBorderSize}px`;
+  canvasContainer.style.boxSizing = 'border-box';
+
+  nodeDivs.forEach(nodeDiv => canvasContainer.appendChild(nodeDiv));
+}
+
+async function glossaryLayout(canvasData) {
+  const nodeDivs = [];
+  for (const node of canvasData.nodes) {
+    const nodeDiv = await renderNode(node, null, null, false, true);
+    nodeDivs.push(nodeDiv);
+  }
+
+  // Add border to the container
+  canvasContainer.style.padding = '50px';
   canvasContainer.style.boxSizing = 'border-box';
 
   nodeDivs.forEach(nodeDiv => canvasContainer.appendChild(nodeDiv));
