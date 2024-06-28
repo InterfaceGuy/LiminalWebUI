@@ -39,7 +39,12 @@ def update_submodules(repos):
         subprocess.run(['git', 'submodule', 'deinit', '-f', repo])
         subprocess.run(['git', 'rm', '-f', repo])
         subprocess.run(['rm', '-rf', f'.git/modules/{repo}'])
-    # Update the submodules
+    # Update existing submodules to the latest commit on the main branch
+    for repo in current_submodules:
+        if repo not in to_remove:
+            subprocess.run(['git', 'submodule', 'update', '--remote', repo])
+            subprocess.run(['git', 'submodule', 'foreach', f'git checkout main && git pull origin main'], cwd=repo)
+    # Initialize and update the submodules
     subprocess.run(['git', 'submodule', 'update', '--init', '--recursive'])
 
 def generate_directory_listing(root_dir):
