@@ -1,6 +1,6 @@
 // Config
 const config = {
-  layoutMode: 'grid', // Available modes: 'mirror', 'grid', 'glossary'
+  layoutMode: 'glossary', // Available modes: 'mirror', 'grid', 'glossary', 'linear'
   gridItemsPerRow: 4,
   gridHorizontalSpacing: 50,
   gridVerticalSpacing: 50,
@@ -37,7 +37,8 @@ async function fetchCanvasData(container, layoutMode) {
   try {
     const response = await fetch('DreamSong.canvas');
     const canvasData = await response.json();
-    renderCanvas(container, canvasData, layoutMode);
+    const sortedNodes = sortNodesByEdges(canvasData);
+    renderCanvas(container, { ...canvasData, nodes: sortedNodes }, layoutMode);
   } catch (error) {
     console.error('Error fetching canvas data:', error);
   }
@@ -92,8 +93,21 @@ async function gridLayout(container, canvasData) {
 async function glossaryLayout(container, canvasData) {
   const nodeDivs = [];
   for (const node of canvasData.nodes) {
-    const nodeDiv = await renderNode(node, null, null, false, true);
-    nodeDivs.push(nodeDiv);
+    if (Array.isArray(node)) {
+      const combinedDiv = document.createElement('div');
+      combinedDiv.style.display = 'flex';
+      combinedDiv.style.flexDirection = 'row';
+      combinedDiv.style.marginBottom = '20px';
+
+      for (const subNode of node) {
+        const nodeDiv = await renderNode(subNode, null, null, false, true);
+        combinedDiv.appendChild(nodeDiv);
+      }
+      nodeDivs.push(combinedDiv);
+    } else {
+      const nodeDiv = await renderNode(node, null, null, false, true);
+      nodeDivs.push(nodeDiv);
+    }
   }
 
   container.style.padding = '50px';
@@ -102,9 +116,41 @@ async function glossaryLayout(container, canvasData) {
   nodeDivs.forEach(nodeDiv => container.appendChild(nodeDiv));
 }
 
+// New function for linear layout
+async function renderLinearFlow(container, sortedNodes) {
+  container.innerHTML = '';
+  container.style.display = 'flex';
+  container.style.flexDirection = 'column';
+  container.style.alignItems = 'center';
+
+  let flipFlop = true;
+
+  for (const node of sortedNodes) {
+    if (Array.isArray(node)) {
+      const combinedDiv = document.createElement('div');
+      combinedDiv.className = 'container';
+      combinedDiv.style.display = 'flex';
+      combinedDiv.style.flexDirection = flipFlop ? 'row' : 'row-reverse';
+      combinedDiv.style.alignItems = 'center';
+      combinedDiv.style.marginBottom = '20px';
+
+      for (const subNode of node) {
+        const nodeDiv = await renderNode(subNode, null, null, false, false);
+        combinedDiv.appendChild(nodeDiv);
+      }
+
+      container.appendChild(combinedDiv);
+      flipFlop = !flipFlop;
+    } else {
+      const nodeDiv = await renderNode(node, null, null, false, false);
+      container.appendChild(nodeDiv);
+    }
+  }
+}
+
 // Nodes
 async function renderNode(node, canvasWidth, canvasHeight, isGridLayout, isGlossaryLayout, currentRow, currentCol) {
-  const repoName = node.file.split('/')[0];
+  const repoName = node.file ? node.file.split('/')[0] : node.id;
   const gifPath = `${repoName}/${repoName}.gif`;
   const pngPath = `${repoName}/${repoName}.png`;
   const pdfPath = `${repoName}/${repoName}.pdf`;
@@ -135,9 +181,12 @@ async function renderNode(node, canvasWidth, canvasHeight, isGridLayout, isGloss
     const itemHeight = 400;
     mediaElement.style.width = `${itemWidth}px`;
     mediaElement.style.height = `${itemHeight}px`;
-  } else {
+  } else if (node.width && node.height) {
     mediaElement.style.width = `${node.width}px`;
     mediaElement.style.height = `${node.height}px`;
+  } else {
+    mediaElement.style.width = '200px';
+    mediaElement.style.height = '200px';
   }
 
   if (gifExists) {
@@ -153,6 +202,11 @@ async function renderNode(node, canvasWidth, canvasHeight, isGridLayout, isGloss
     pdfElement.src = pdfPath;
     pdfElement.type = 'application/pdf';
     mediaElement.appendChild(pdfElement);
+  } else if (node.type === 'text') {
+    const textElement = document.createElement('div');
+    textElement.innerHTML = convertMarkdownToHTML(node.text);
+    textElement.style.fontSize = '16px';
+    mediaElement.appendChild(textElement);
   } else {
     const textElement = document.createElement('div');
     textElement.textContent = repoName;
@@ -188,7 +242,7 @@ async function renderNode(node, canvasWidth, canvasHeight, isGridLayout, isGloss
     const definitionText = await fetchDefinitionText(repoName);
     const definitionElement = document.createElement('div');
     definitionElement.className = 'definition-element';
-    definitionElement.textContent = definitionText;
+    definitionElement.innerHTML = definitionText;
     // Append definitionElement to nodeDiv
     nodeDiv.appendChild(definitionElement);
   }
@@ -201,7 +255,7 @@ async function renderNode(node, canvasWidth, canvasHeight, isGridLayout, isGloss
     nodeDiv.style.position = 'absolute';
     nodeDiv.style.left = `${left}px`;
     nodeDiv.style.top = `${top}px`;
-  } else if (!isGlossaryLayout) {
+  } else if (canvasWidth && canvasHeight) {
     const adjustedX = node.x + canvasWidth / 2;
     const adjustedY = canvasHeight / 2 - node.y;
     nodeDiv.style.position = 'absolute';
@@ -216,15 +270,134 @@ async function fetchDefinitionText(repoName) {
   try {
     const response = await fetch(`${repoName}/README.md`);
     const markdownText = await response.text();
-    const plainText = markdownText
-      .replace(/!?\[.*?\]\(.*?\)/g, '') // Remove images/links
-      .replace(/#+\s/g, '') // Remove markdown headers
-      .replace(new RegExp(`^${repoName}\\s*`, 'i'), ''); // Remove the main title if it matches repoName
-    return plainText.trim();
+    const htmlContent = convertMarkdownToHTML(markdownText);
+    return htmlContent;
   } catch (error) {
     console.error(`Error fetching definition text for ${repoName}:`, error);
     return 'Definition not available.';
   }
+}
+
+// Topological sorting function
+function sortNodesByEdges(canvasData) {
+  const nodes = canvasData.nodes;
+  const edges = canvasData.edges;
+
+  const nodeMap = new Map();
+  nodes.forEach(node => nodeMap.set(node.id, node));
+
+  const unidirectionalEdges = edges.filter(edge => !('toEnd' in edge));
+  const nonDirectionalEdges = edges.filter(edge => 'toEnd' in edge);
+
+  const adjList = new Map();
+  unidirectionalEdges.forEach(edge => {
+    if (!adjList.has(edge.fromNode)) {
+      adjList.set(edge.fromNode, []);
+    }
+    adjList.get(edge.fromNode).push(edge.toNode);
+  });
+
+  const unidirectionalNodes = new Set();
+  unidirectionalEdges.forEach(edge => {
+    unidirectionalNodes.add(edge.fromNode);
+    unidirectionalNodes.add(edge.toNode);
+  });
+
+  const sortedNodes = [];
+  const visited = new Set();
+
+  function dfs(nodeId) {
+    if (visited.has(nodeId) || !unidirectionalNodes.has(nodeId)) return;
+    visited.add(nodeId);
+
+    const neighbors = adjList.get(nodeId) || [];
+    neighbors.forEach(neighborId => dfs(neighborId));
+
+    sortedNodes.unshift(nodeMap.get(nodeId));
+  }
+
+  const incomingEdges = new Set(unidirectionalEdges.map(edge => edge.toNode));
+  nodes.forEach(node => {
+    if (unidirectionalNodes.has(node.id) && !incomingEdges.has(node.id)) {
+      dfs(node.id);
+    }
+  });
+
+  unidirectionalNodes.forEach(nodeId => {
+    if (!visited.has(nodeId)) {
+      sortedNodes.push(nodeMap.get(nodeId));
+    }
+  });
+
+  nonDirectionalEdges.forEach(edge => {
+    const node1 = nodeMap.get(edge.fromNode);
+    const node2 = nodeMap.get(edge.toNode);
+
+    if (node1 && node2) {
+      sortedNodes.forEach((node, index) => {
+        if (Array.isArray(node)) {
+          const [mediaNode, textNode] = node;
+          if (mediaNode.id === node1.id || mediaNode.id === node2.id) {
+            sortedNodes[index] = [mediaNode, textNode, node1.id === mediaNode.id ? node2 : node1];
+            visited.add(node1.id);
+            visited.add(node2.id);
+          }
+        } else if (node.id === node1.id || node.id === node2.id) {
+          const combinedNode = node.id === node1.id ? node2 : node1;
+          sortedNodes[index] = [node, combinedNode];
+          visited.add(node.id);
+          visited.add(combinedNode.id);
+        }
+      });
+    }
+  });
+
+  nodes.forEach(node => {
+    if (!visited.has(node.id) && !unidirectionalNodes.has(node.id)) {
+      sortedNodes.push(node);
+    }
+  });
+
+  return sortedNodes;
+}
+
+// Convert markdown to HTML
+function convertMarkdownToHTML(markdown) {
+  if (!markdown) return ''; // Return an empty string if markdown is undefined
+
+  // Remove the primary header (first occurrence of # at the start of a line)
+  markdown = markdown.replace(/^# .+\n/, '');
+
+  // Helper function to wrap list items in <ul> tags
+  const wrapListItems = (html) => {
+    const listRegex = /<li>[\s\S]+?<\/li>/g;
+    return html.replace(listRegex, match => `<ul>${match}</ul>`);
+  };
+
+  return wrapListItems(markdown
+    // Convert headers (excluding the primary header)
+    .replace(/^##### (.*$)/gim, '<h5>$1</h5>')
+    .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    // Convert bold text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    // Convert italic text
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    // Convert unordered lists
+    .replace(/^\s*-\s(.*)$/gim, '<li>$1</li>')
+    // Convert ordered lists
+    .replace(/^\s*\d+\.\s(.*)$/gim, '<li>$1</li>')
+    // Convert links (including YouTube links), making them clickable
+    .replace(/!?\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')
+    // Convert line breaks
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    // Wrap content in paragraphs
+    .replace(/^(.+)$/gim, '<p>$1</p>')
+    // Remove empty paragraphs
+    .replace(/<p>\s*<\/p>/g, '')
+  );
 }
 
 // Main initialization
