@@ -1,16 +1,15 @@
-const canvasContainer = document.getElementById('canvas-container');
-const layoutMode = 'glossary'; // Set the desired layout mode: 'mirror', 'grid', or 'glossary'
-const gridItemsPerRow = 4; // Set the number of items per row for the grid layout
-const gridHorizontalSpacing = 50; // Horizontal spacing between grid items
-const gridVerticalSpacing = 50; // Vertical spacing between grid items
-const gridBorderSize = 50; // Border size around the grid container
+// Config
+const config = {
+  layoutMode: 'grid', // Available modes: 'mirror', 'grid', 'glossary'
+  gridItemsPerRow: 4,
+  gridHorizontalSpacing: 50,
+  gridVerticalSpacing: 50,
+  gridBorderSize: 50
+};
 
-let currentRow = 0; // Track the current row for grid layout
-let currentCol = 0; // Track the current column for grid layout
-
+// Utils
 let directoryListing = {};
 
-// Function to load the JSON content dynamically
 async function loadDirectoryListing() {
   try {
     const response = await fetch('directory-listing.json');
@@ -20,7 +19,6 @@ async function loadDirectoryListing() {
   }
 }
 
-// Function to check if a file exists in the directory listing
 function fileExists(path, file) {
   const parts = path.split('/');
   let current = directoryListing;
@@ -35,31 +33,77 @@ function fileExists(path, file) {
   return current && current[file] !== undefined;
 }
 
-async function fetchCanvasData() {
+async function fetchCanvasData(container, layoutMode) {
   try {
     const response = await fetch('DreamSong.canvas');
     const canvasData = await response.json();
-    renderCanvas(canvasData, layoutMode);
+    renderCanvas(container, canvasData, layoutMode);
   } catch (error) {
     console.error('Error fetching canvas data:', error);
   }
 }
 
-function renderCanvas(canvasData, layoutMode) {
-  canvasContainer.innerHTML = '';
-  const canvasWidth = canvasContainer.offsetWidth;
-  const canvasHeight = canvasContainer.offsetHeight;
+// Render
+function renderCanvas(container, canvasData, layoutMode) {
+  container.innerHTML = '';
+  const canvasWidth = container.offsetWidth;
+  const canvasHeight = container.offsetHeight;
 
   if (layoutMode === 'mirror') {
-    mirrorCanvas(canvasData, canvasWidth, canvasHeight);
+    mirrorCanvas(container, canvasData, canvasWidth, canvasHeight);
   } else if (layoutMode === 'grid') {
-    gridLayout(canvasData);
+    gridLayout(container, canvasData);
   } else if (layoutMode === 'glossary') {
-    glossaryLayout(canvasData);
+    glossaryLayout(container, canvasData);
   }
 }
 
-async function renderNode(node, canvasWidth, canvasHeight, isGridLayout, isGlossaryLayout) {
+function mirrorCanvas(container, canvasData, canvasWidth, canvasHeight) {
+  const nodeDivs = [];
+  canvasData.nodes.forEach(async (node) => {
+    const nodeDiv = await renderNode(node, canvasWidth, canvasHeight, false, false);
+    nodeDivs.push(nodeDiv);
+    container.appendChild(nodeDiv);
+  });
+}
+
+async function gridLayout(container, canvasData) {
+  const nodeDivs = [];
+  let currentRow = 0;
+  let currentCol = 0;
+
+  for (const node of canvasData.nodes) {
+    const nodeDiv = await renderNode(node, null, null, true, false, currentRow, currentCol);
+    nodeDivs.push(nodeDiv);
+    
+    currentCol++;
+    if (currentCol >= config.gridItemsPerRow) {
+      currentCol = 0;
+      currentRow++;
+    }
+  }
+
+  container.style.padding = `${config.gridBorderSize}px`;
+  container.style.boxSizing = 'border-box';
+
+  nodeDivs.forEach(nodeDiv => container.appendChild(nodeDiv));
+}
+
+async function glossaryLayout(container, canvasData) {
+  const nodeDivs = [];
+  for (const node of canvasData.nodes) {
+    const nodeDiv = await renderNode(node, null, null, false, true);
+    nodeDivs.push(nodeDiv);
+  }
+
+  container.style.padding = '50px';
+  container.style.boxSizing = 'border-box';
+
+  nodeDivs.forEach(nodeDiv => container.appendChild(nodeDiv));
+}
+
+// Nodes
+async function renderNode(node, canvasWidth, canvasHeight, isGridLayout, isGlossaryLayout, currentRow, currentCol) {
   const repoName = node.file.split('/')[0];
   const gifPath = `${repoName}/${repoName}.gif`;
   const pngPath = `${repoName}/${repoName}.png`;
@@ -69,18 +113,22 @@ async function renderNode(node, canvasWidth, canvasHeight, isGridLayout, isGloss
   const pngExists = fileExists(repoName, `${repoName}.png`);
   const pdfExists = fileExists(repoName, `${repoName}.pdf`);
 
+  // Create the main container for this node
   const nodeDiv = document.createElement('div');
   nodeDiv.style.display = 'flex';
-  nodeDiv.style.flexDirection = isGlossaryLayout ? 'row' : 'column';
+  nodeDiv.style.flexDirection = 'row';
   nodeDiv.style.alignItems = 'center';
   nodeDiv.style.justifyContent = 'center';
-  nodeDiv.style.marginBottom = '20px'; // Add space between rows in glossary layout
+  nodeDiv.style.marginBottom = '20px';
+
+  // Create a container for the media element and label
+  const mediaLabelContainer = document.createElement('div');
+  mediaLabelContainer.style.display = 'flex';
+  mediaLabelContainer.style.flexDirection = 'column';
+  mediaLabelContainer.style.alignItems = 'center';
 
   const mediaElement = document.createElement('div');
-  mediaElement.style.transition = 'transform 0.3s ease';
-  mediaElement.style.display = 'flex';
-  mediaElement.style.justifyContent = 'center';
-  mediaElement.style.alignItems = 'center';
+  mediaElement.className = 'media-element';
 
   if (isGridLayout) {
     const itemWidth = 400;
@@ -95,44 +143,26 @@ async function renderNode(node, canvasWidth, canvasHeight, isGridLayout, isGloss
   if (gifExists) {
     const gifElement = document.createElement('img');
     gifElement.src = gifPath;
-    gifElement.style.width = '100%';
-    gifElement.style.height = '100%';
-    gifElement.style.objectFit = 'contain';
     mediaElement.appendChild(gifElement);
   } else if (pngExists) {
     const pngElement = document.createElement('img');
     pngElement.src = pngPath;
-    pngElement.style.width = '100%';
-    pngElement.style.height = '100%';
-    pngElement.style.objectFit = 'contain';
     mediaElement.appendChild(pngElement);
   } else if (pdfExists) {
     const pdfElement = document.createElement('embed');
     pdfElement.src = pdfPath;
     pdfElement.type = 'application/pdf';
-    pdfElement.style.width = '100%';
-    pdfElement.style.height = '100%';
-    pdfElement.style.filter = 'invert(1)'; // Invert colors for PDF
     mediaElement.appendChild(pdfElement);
   } else {
     const textElement = document.createElement('div');
     textElement.textContent = repoName;
-    textElement.style.display = 'flex';
-    textElement.style.alignItems = 'center';
-    textElement.style.justifyContent = 'center';
     textElement.style.fontSize = '30px';
-    textElement.style.objectFit = 'contain'; // Scale text to fit container
-    textElement.style.width = '100%';
-    textElement.style.height = '100%';
     mediaElement.appendChild(textElement);
   }
 
   const labelElement = document.createElement('div');
   labelElement.textContent = repoName;
-  labelElement.style.textAlign = 'center'; // Center the label text
-  labelElement.style.fontSize = 'clamp(12px, 2vw, 20px)'; // Adjust font size based on container width
-  labelElement.style.marginTop = '10px';
-  labelElement.style.maxWidth = mediaElement.style.width; // Limit label width to container width
+  labelElement.className = 'clamp-text';
 
   mediaElement.addEventListener('mouseover', () => {
     mediaElement.style.transform = 'scale(1.1)';
@@ -147,39 +177,30 @@ async function renderNode(node, canvasWidth, canvasHeight, isGridLayout, isGloss
     window.open(repoUrl, '_blank');
   });
 
-  if (isGlossaryLayout) {
-    nodeDiv.style.width = '100%'; // Make the nodeDiv full width in glossary layout
-    mediaElement.style.width = '300px'; // Fixed width for media element in glossary layout
-    mediaElement.style.height = '300px'; // Fixed height for media element in glossary layout
-    nodeDiv.appendChild(mediaElement);
-    nodeDiv.appendChild(labelElement);
+  // Append mediaElement and labelElement to mediaLabelContainer
+  mediaLabelContainer.appendChild(mediaElement);
+  mediaLabelContainer.appendChild(labelElement);
 
+  // Append mediaLabelContainer to nodeDiv
+  nodeDiv.appendChild(mediaLabelContainer);
+
+  if (isGlossaryLayout) {
     const definitionText = await fetchDefinitionText(repoName);
     const definitionElement = document.createElement('div');
-    definitionElement.style.flex = '1';
-    definitionElement.style.paddingLeft = '20px';
+    definitionElement.className = 'definition-element';
     definitionElement.textContent = definitionText;
+    // Append definitionElement to nodeDiv
     nodeDiv.appendChild(definitionElement);
-  } else {
-    nodeDiv.appendChild(mediaElement);
-    if (gifExists || pngExists || pdfExists) {
-      nodeDiv.appendChild(labelElement);
-    }
   }
 
   if (isGridLayout) {
     const itemWidth = 400;
     const itemHeight = 400;
-    const left = currentCol * (itemWidth + gridHorizontalSpacing) + gridBorderSize;
-    const top = currentRow * (itemHeight + gridVerticalSpacing) + gridBorderSize;
+    const left = currentCol * (itemWidth + config.gridHorizontalSpacing) + config.gridBorderSize;
+    const top = currentRow * (itemHeight + config.gridVerticalSpacing) + config.gridBorderSize;
     nodeDiv.style.position = 'absolute';
     nodeDiv.style.left = `${left}px`;
     nodeDiv.style.top = `${top}px`;
-    currentCol++;
-    if (currentCol >= gridItemsPerRow) {
-      currentCol = 0;
-      currentRow++;
-    }
   } else if (!isGlossaryLayout) {
     const adjustedX = node.x + canvasWidth / 2;
     const adjustedY = canvasHeight / 2 - node.y;
@@ -195,7 +216,10 @@ async function fetchDefinitionText(repoName) {
   try {
     const response = await fetch(`${repoName}/README.md`);
     const markdownText = await response.text();
-    const plainText = markdownText.replace(/!?\[.*?\]\(.*?\)/g, '').replace(/#+\s/g, '');
+    const plainText = markdownText
+      .replace(/!?\[.*?\]\(.*?\)/g, '') // Remove images/links
+      .replace(/#+\s/g, '') // Remove markdown headers
+      .replace(new RegExp(`^${repoName}\\s*`, 'i'), ''); // Remove the main title if it matches repoName
     return plainText.trim();
   } catch (error) {
     console.error(`Error fetching definition text for ${repoName}:`, error);
@@ -203,49 +227,12 @@ async function fetchDefinitionText(repoName) {
   }
 }
 
-function mirrorCanvas(canvasData, canvasWidth, canvasHeight) {
-  const nodeDivs = [];
-  canvasData.nodes.forEach(async (node) => {
-    const nodeDiv = await renderNode(node, canvasWidth, canvasHeight, false, false);
-    nodeDivs.push(nodeDiv);
-    canvasContainer.appendChild(nodeDiv);
-  });
-}
-
-async function gridLayout(canvasData) {
-  const nodeDivs = [];
-  currentRow = 0; // Reset current row
-  currentCol = 0; // Reset current column
-
-  for (const node of canvasData.nodes) {
-    const nodeDiv = await renderNode(node, null, null, true, false);
-    nodeDivs.push(nodeDiv);
-  }
-
-  // Add border to the grid container
-  canvasContainer.style.padding = `${gridBorderSize}px`;
-  canvasContainer.style.boxSizing = 'border-box';
-
-  nodeDivs.forEach(nodeDiv => canvasContainer.appendChild(nodeDiv));
-}
-
-async function glossaryLayout(canvasData) {
-  const nodeDivs = [];
-  for (const node of canvasData.nodes) {
-    const nodeDiv = await renderNode(node, null, null, false, true);
-    nodeDivs.push(nodeDiv);
-  }
-
-  // Add border to the container
-  canvasContainer.style.padding = '50px';
-  canvasContainer.style.boxSizing = 'border-box';
-
-  nodeDivs.forEach(nodeDiv => canvasContainer.appendChild(nodeDiv));
-}
+// Main initialization
+const canvasContainer = document.getElementById('canvas-container');
 
 async function initialize() {
   await loadDirectoryListing();
-  fetchCanvasData();
+  fetchCanvasData(canvasContainer, config.layoutMode);
 }
 
 initialize();
